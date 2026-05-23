@@ -6,6 +6,20 @@ model as a **technical advisor** tool inside Claude Code. It registers one tool,
 with an advisor system prompt and returns the answer — a first-class second
 opinion you can reach for mid-task.
 
+## Quick start
+
+```powershell
+cd C:\dev\Ollama-MCP
+./setup.ps1
+```
+
+`setup.ps1` is idempotent: it installs dependencies, ensures the default model
+is pulled (loudly, since it's a multi-GB download), registers the server with
+Claude Code at **user scope** — available in **every** Claude Code project on
+this machine, no per-project step — and runs the smoke test. On a *fresh*
+registration it reminds you to restart Claude Code so the `mcp__ollama__consult`
+tool loads. The manual steps below are the by-hand fallback.
+
 ## Requirements
 
 - [Ollama](https://ollama.com) running locally (default `http://localhost:11434`)
@@ -21,7 +35,8 @@ npm install
 
 ## Register with Claude Code
 
-User scope (available in every session):
+User scope — registers once for **every** Claude Code session and project on
+this machine (no per-project step):
 
 ```powershell
 claude mcp add ollama -s user -- node C:\dev\Ollama-MCP\server.js
@@ -29,14 +44,15 @@ claude mcp add ollama -s user -- node C:\dev\Ollama-MCP\server.js
 
 This writes to `~/.claude.json`. The tool is then exposed as
 **`mcp__ollama__consult`**. Restart Claude Code so it loads the new server, then
-confirm with `claude mcp list` (expect `ollama: ... ✓ Connected`).
+confirm with `claude mcp get ollama` (expect `Scope: User config` and
+`✓ Connected`).
 
 To remove it: `claude mcp remove ollama -s user`.
 
 ## The `consult` tool
 
 | Input | Type | Required | Default | Description |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | `question` | string | yes | — | The decision, design, or question to get advice on. |
 | `context` | string | no | — | Background: the current plan, relevant code, constraints. |
 | `model` | string | no | `gemma4:31b` | Ollama model tag to use. |
@@ -50,7 +66,7 @@ returns an `isError` result with a clear message instead of throwing.
 ## Configuration (env vars)
 
 | Variable | Default | Purpose |
-|---|---|---|
+| --- | --- | --- |
 | `OLLAMA_HOST` | `http://localhost:11434` | Base URL of the Ollama server. |
 | `OLLAMA_ADVISOR_MODEL` | `gemma4:31b` | Default model when the `model` arg is omitted. |
 
