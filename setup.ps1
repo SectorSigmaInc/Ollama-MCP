@@ -63,9 +63,15 @@ if (-not (Get-Command claude -ErrorAction SilentlyContinue)) {
 }
 
 # 5. End-to-end smoke test (spawns the server itself; independent of Claude Code).
+# test-client.mjs exits 0 even when the tool returns isError:true, so assert on
+# its output (IS_ERROR: false) -- not just the exit code -- to avoid a false PASS.
 Step '5/5' 'Smoke test (node test-client.mjs)'
-node $testClient
-if ($LASTEXITCODE -ne 0) { Fail 'smoke test failed -- see output above.' }
+$smoke = & node $testClient 2>&1
+$smoke | ForEach-Object { Write-Host $_ }
+if ($LASTEXITCODE -ne 0) { Fail 'smoke test crashed -- see output above.' }
+if (($smoke -join "`n") -notmatch 'IS_ERROR: false') {
+    Fail 'smoke test reached the server but the advisor returned an error (IS_ERROR not false) -- see output above.'
+}
 Pass 'smoke test passed.'
 
 Write-Host "`nOllama-MCP is live." -ForegroundColor Green

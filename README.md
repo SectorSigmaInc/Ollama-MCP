@@ -20,6 +20,10 @@ this machine, no per-project step — and runs the smoke test. On a *fresh*
 registration it reminds you to restart Claude Code so the `mcp__ollama__consult`
 tool loads. The manual steps below are the by-hand fallback.
 
+> If you downloaded the repo as a zip rather than `git clone`, PowerShell may
+> block the script (Mark-of-the-Web). Run it with
+> `powershell -ExecutionPolicy Bypass -File .\setup.ps1`.
+
 ## Requirements
 
 - [Ollama](https://ollama.com) running locally (default `http://localhost:11434`)
