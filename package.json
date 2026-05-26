@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "description": "MCP server exposing a local Ollama model (gemma4) as a technical advisor tool.",
+  "scripts": {
+    "lint:skill": "node scripts/lint-skill.mjs"
+  },
   "bin": {
     "ollama-mcp": "server.js"
   },
