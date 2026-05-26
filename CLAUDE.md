@@ -51,7 +51,9 @@ is the test. To lint an arbitrary skill file: `node scripts/lint-skill.mjs <path
   `OLLAMA_ADVISOR_MODEL` (default `gemma4:26b`). Both `server.js` and `setup.ps1` read them.
   `OLLAMA_ADVISOR_NUM_CTX` (unset by default) sets the context window; when unset the request
   omits `num_ctx` entirely so Ollama uses its own default. The `consult` tool also takes optional
-  `model` and `num_ctx` args that override the env defaults per call.
+  `model` and `num_ctx` args that override the env defaults per call. A per-machine default belongs
+  in the registration, not the code (the safe size depends on the GPU's VRAM) — `setup.ps1 -NumCtx
+  <tokens>` writes `OLLAMA_ADVISOR_NUM_CTX` into the `claude mcp add` registration.
 
 ## The consultation discipline (the skill's whole point)
 

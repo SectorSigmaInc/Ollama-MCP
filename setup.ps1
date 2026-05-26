@@ -3,6 +3,14 @@
 # model, register the server with Claude Code (user scope), and smoke-test it.
 # Idempotent -- safe to re-run. Run from anywhere: paths resolve off $PSScriptRoot.
 
+[CmdletBinding()]
+param(
+    # Context window in tokens to bake into the MCP registration as OLLAMA_ADVISOR_NUM_CTX.
+    # Omit to register without it -- the server then falls back to Ollama's own default.
+    # A pre-set $env:OLLAMA_ADVISOR_NUM_CTX is honored when -NumCtx is not passed.
+    [int]$NumCtx = 0
+)
+
 $ErrorActionPreference = 'Stop'
 
 $root       = $PSScriptRoot
@@ -10,6 +18,9 @@ $server     = Join-Path $root 'server.js'
 $testClient = Join-Path $root 'test-client.mjs'
 $model      = if ($env:OLLAMA_ADVISOR_MODEL) { $env:OLLAMA_ADVISOR_MODEL } else { 'gemma4:26b' }
 $ollamaHost = if ($env:OLLAMA_HOST)          { $env:OLLAMA_HOST }          else { 'http://localhost:11434' }
+
+# Effective context window: -NumCtx wins; else a pre-set OLLAMA_ADVISOR_NUM_CTX; else none.
+if ($NumCtx -le 0 -and $env:OLLAMA_ADVISOR_NUM_CTX) { $NumCtx = [int]$env:OLLAMA_ADVISOR_NUM_CTX }
 
 function Step($n, $msg) { Write-Host "`n=== $n  $msg ===" -ForegroundColor Cyan }
 function Pass($msg)     { Write-Host "PASS: $msg"          -ForegroundColor Green }
@@ -44,19 +55,31 @@ if ($installed -notmatch [regex]::Escape($model)) {
 }
 Pass "model '$model' available."
 
-# 4. Register with Claude Code at user scope -- only if not already registered.
+# 4. Register with Claude Code at user scope. Add if missing; if a context window was
+#    requested, (re)register so OLLAMA_ADVISOR_NUM_CTX is applied (mcp add won't update it).
 Step '4/5' 'Claude Code registration (user scope)'
 $freshlyRegistered = $false
+# Include OLLAMA_ADVISOR_NUM_CTX in the registration only when a context window is set.
+$envArgs    = if ($NumCtx -gt 0) { @('-e', "OLLAMA_ADVISOR_NUM_CTX=$NumCtx") } else { @() }
+$numCtxNote = if ($NumCtx -gt 0) { " (OLLAMA_ADVISOR_NUM_CTX=$NumCtx)" }        else { '' }
 if (-not (Get-Command claude -ErrorAction SilentlyContinue)) {
+    $addHint = (@('claude', 'mcp', 'add', 'ollama', '-s', 'user') + $envArgs + @('--', 'node', "`"$server`"")) -join ' '
     Write-Host "WARN: 'claude' CLI not on PATH -- skipping registration. Register later with:" -ForegroundColor Yellow
-    Write-Host "      claude mcp add ollama -s user -- node `"$server`"" -ForegroundColor Yellow
+    Write-Host "      $addHint" -ForegroundColor Yellow
 } else {
     & claude mcp get ollama *> $null
     if ($LASTEXITCODE -ne 0) {
-        & claude mcp add ollama -s user -- node $server
+        & claude mcp add ollama -s user @envArgs -- node $server
         if ($LASTEXITCODE -ne 0) { Fail 'claude mcp add failed.' }
         $freshlyRegistered = $true
-        Pass "registered 'ollama' at user scope -> node $server"
+        Pass "registered 'ollama' at user scope -> node $server$numCtxNote"
+    } elseif ($NumCtx -gt 0) {
+        # Re-register to apply/update the context window (mcp add leaves an existing entry as-is).
+        & claude mcp remove ollama -s user *> $null
+        & claude mcp add ollama -s user @envArgs -- node $server
+        if ($LASTEXITCODE -ne 0) { Fail 'claude mcp re-registration failed.' }
+        $freshlyRegistered = $true
+        Pass "re-registered 'ollama' at user scope$numCtxNote"
     } else {
         Pass "'ollama' already registered at user scope (left as-is)."
     }
