@@ -119,6 +119,7 @@ The full discipline lives in [`skills/local-advisor/SKILL.md`](skills/local-advi
 | `question` | string | yes | — | The decision, design, or question to get advice on. |
 | `context` | string | no | — | Background: the current plan, relevant code, constraints. |
 | `model` | string | no | `gemma4:26b` | Ollama model tag to use. |
+| `num_ctx` | integer | no | Ollama's default | Context window in tokens. Larger costs VRAM; a new value forces a model reload. |
 
 Returns the model's text answer. On an HTTP error or an unreachable Ollama it
 returns an `isError` result with a clear message instead of throwing.
@@ -132,6 +133,7 @@ returns an `isError` result with a clear message instead of throwing.
 | --- | --- | --- |
 | `OLLAMA_HOST` | `http://localhost:11434` | Base URL of the Ollama server. |
 | `OLLAMA_ADVISOR_MODEL` | `gemma4:26b` | Default model when the `model` arg is omitted. |
+| `OLLAMA_ADVISOR_NUM_CTX` | _(unset)_ | Default context window (tokens) when the `num_ctx` arg is omitted. Unset lets Ollama choose. |
 
 ## Notes
 
