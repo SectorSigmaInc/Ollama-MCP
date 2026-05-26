@@ -6,12 +6,28 @@ model as a **technical advisor** tool inside Claude Code. It registers one tool,
 with an advisor system prompt and returns the answer — a first-class second
 opinion you can reach for mid-task.
 
-## Quick start
+**Why a *local* model?** Its value is not raw capability — a small local model sits well
+below a frontier model — but **independence**: it has not seen your reasoning, so its
+blind spots do not overlap with yours. Use it to pressure-test a decision, not to answer
+it for you.
+
+This repo ships two pieces that work together:
+
+- **the MCP server** (`server.js`) — registers the `ollama` server exposing the `consult` tool; and
+- **the `local-advisor` skill** (`skills/local-advisor/`) — a Claude Code skill that drives `consult` with an adversarial, sycophancy-resistant consultation discipline.
+
+The server works on its own; the skill turns it into a disciplined second-opinion workflow.
+Install the server first, then (optionally) the skill.
+
+## Quick start (Windows / PowerShell)
 
 ```powershell
-cd C:\dev\Ollama-MCP
+cd Ollama-MCP   # the directory you cloned into
 ./setup.ps1
 ```
+
+> **macOS / Linux** (or to do it by hand on any OS): `setup.ps1` is PowerShell-only —
+> use the cross-platform [**Manual install**](#manual-install) below instead.
 
 `setup.ps1` is idempotent: it installs dependencies, ensures the default model
 is pulled (loudly, since it's a multi-GB download), registers the server with
@@ -30,10 +46,11 @@ tool loads. The manual steps below are the by-hand fallback.
   with at least one model pulled. Default model: `gemma4:31b`.
 - Node.js 18+ (uses the global `fetch`; built and tested on Node 24).
 
-## Install
+## Manual install
 
-```powershell
-cd C:\dev\Ollama-MCP
+Works on any OS (macOS, Linux, Windows). From the directory you cloned into:
+
+```sh
 npm install
 ```
 
@@ -42,9 +59,13 @@ npm install
 User scope — registers once for **every** Claude Code session and project on
 this machine (no per-project step):
 
-```powershell
-claude mcp add ollama -s user -- node C:\dev\Ollama-MCP\server.js
+```sh
+claude mcp add ollama -s user -- node /absolute/path/to/Ollama-MCP/server.js
 ```
+
+> Use the **absolute path** to `server.js` in your clone — e.g. `C:\dev\Ollama-MCP\server.js`
+> on Windows, `/home/you/Ollama-MCP/server.js` on macOS/Linux. The server is registered at
+> user scope, so the path must be absolute.
 
 This writes to `~/.claude.json`. The tool is then exposed as
 **`mcp__ollama__consult`**. Restart Claude Code so it loads the new server, then
@@ -52,6 +73,44 @@ confirm with `claude mcp get ollama` (expect `Scope: User config` and
 `✓ Connected`).
 
 To remove it: `claude mcp remove ollama -s user`.
+
+## Install the `local-advisor` skill (optional)
+
+The skill is a plain Markdown file. Copy it into your user skills directory so Claude Code
+loads it in every project:
+
+```sh
+mkdir -p ~/.claude/skills/local-advisor
+cp skills/local-advisor/SKILL.md ~/.claude/skills/local-advisor/SKILL.md
+```
+
+On Windows (PowerShell):
+
+```powershell
+New-Item -ItemType Directory -Force ~/.claude/skills/local-advisor | Out-Null
+Copy-Item skills/local-advisor/SKILL.md ~/.claude/skills/local-advisor/SKILL.md
+```
+
+Restart Claude Code and invoke it with `/local-advisor`. (A one-command plugin install is
+on the roadmap.)
+
+## Using the advisor — the consultation discipline
+
+A weak model consulted naively just agrees with you. The skill enforces a discipline worth
+applying even when you call `consult` by hand:
+
+- **Adversarial by default.** When you already have a conclusion, give the advisor your
+  conclusion and reasoning and tell it to *assume you are wrong and find the most likely
+  failure point* — a failure-search, not a "review."
+- **Open mode when you don't.** With no conclusion yet, pose the decision and constraints
+  but withhold any answer you are leaning toward, so you don't anchor it.
+- **Neutralize platform jargon.** The local model has never seen your stack; terms like
+  *MCP*, *hook*, or *subagent* get silently reinterpreted. Spell them out in plain words
+  before sending.
+- **Adjudicate, don't defer.** It is a weaker model; treat its findings as candidate blind
+  spots to evaluate, never as verdicts. The divergences from your thinking are the signal.
+
+The full discipline lives in [`skills/local-advisor/SKILL.md`](skills/local-advisor/SKILL.md).
 
 ## The `consult` tool
 
@@ -83,10 +142,12 @@ returns an `isError` result with a clear message instead of throwing.
   context. For very long `context` inputs, pass `model: "gemma4:26b"` (~17 GB)
   for more headroom.
 
-## Test it standalone
+## Test it standalone (any OS)
 
-```powershell
+```sh
 node test-client.mjs
 ```
 
-Expect `TOOLS: consult`, `IS_ERROR: false`, and a one-sentence advisor answer.
+Expect `TOOLS: consult`, `IS_ERROR: false`, and a one-sentence advisor answer. This — along
+with `claude mcp get ollama` — is the OS-agnostic way to confirm the chain is live before
+relying on it.
