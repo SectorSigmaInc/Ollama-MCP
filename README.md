@@ -91,8 +91,8 @@ New-Item -ItemType Directory -Force ~/.claude/skills/local-advisor | Out-Null
 Copy-Item skills/local-advisor/SKILL.md ~/.claude/skills/local-advisor/SKILL.md
 ```
 
-Restart Claude Code and invoke it with `/local-advisor`. (A one-command plugin install is
-on the roadmap.)
+Restart Claude Code and invoke it with `/local-advisor`. (A one-command plugin install
+may come in a future release.)
 
 ## Using the advisor — the consultation discipline
 
@@ -151,3 +151,21 @@ node test-client.mjs
 Expect `TOOLS: consult`, `IS_ERROR: false`, and a one-sentence advisor answer. This — along
 with `claude mcp get ollama` — is the OS-agnostic way to confirm the chain is live before
 relying on it.
+
+## Development
+
+The skill is structurally linted by `scripts/lint-skill.mjs` — run it before committing a
+change to the skill:
+
+```sh
+npm run lint:skill
+```
+
+It checks the `SKILL.md` frontmatter, required fields, the `$ARGUMENTS` placeholder, internal
+link resolution, and file size. An optional `LINT_SKILL_FORBIDDEN="term1,term2"` environment
+variable additionally fails the lint if any (case-insensitive) substring appears — useful when
+porting a skill from another copy to keep source-specific terms out.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
