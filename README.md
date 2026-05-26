@@ -43,7 +43,7 @@ tool loads. The manual steps below are the by-hand fallback.
 ## Requirements
 
 - [Ollama](https://ollama.com) running locally (default `http://localhost:11434`)
-  with at least one model pulled. Default model: `gemma4:31b`.
+  with at least one model pulled. Default model: `gemma4:26b`.
 - Node.js 18+ (uses the global `fetch`; built and tested on Node 24).
 
 ## Manual install
@@ -118,7 +118,7 @@ The full discipline lives in [`skills/local-advisor/SKILL.md`](skills/local-advi
 | --- | --- | --- | --- | --- |
 | `question` | string | yes | — | The decision, design, or question to get advice on. |
 | `context` | string | no | — | Background: the current plan, relevant code, constraints. |
-| `model` | string | no | `gemma4:31b` | Ollama model tag to use. |
+| `model` | string | no | `gemma4:26b` | Ollama model tag to use. |
 
 Returns the model's text answer. On an HTTP error or an unreachable Ollama it
 returns an `isError` result with a clear message instead of throwing.
@@ -131,16 +131,18 @@ returns an `isError` result with a clear message instead of throwing.
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `OLLAMA_HOST` | `http://localhost:11434` | Base URL of the Ollama server. |
-| `OLLAMA_ADVISOR_MODEL` | `gemma4:31b` | Default model when the `model` arg is omitted. |
+| `OLLAMA_ADVISOR_MODEL` | `gemma4:26b` | Default model when the `model` arg is omitted. |
 
 ## Notes
 
 - **First-call latency:** a cold model load can take ~60 s; the server sends
   `keep_alive: "30m"` to keep the model resident between calls. The request
   timeout is 300 s to absorb cold starts.
-- **VRAM:** `gemma4:31b` (~19 GB) fits on a 24 GB GPU with ~5 GB left for
-  context. For very long `context` inputs, pass `model: "gemma4:26b"` (~17 GB)
-  for more headroom.
+- **VRAM:** the default `gemma4:26b` (~17 GB of weights) loads on a 24 GB GPU
+  leaving ~5 GB free for the context KV cache (measured at minimal context) —
+  the roomier choice for long `context` inputs. `gemma4:31b` (~19 GB) trades
+  that headroom for capability; pass `model: "gemma4:31b"` when you have room
+  to spare.
 
 ## Test it standalone (any OS)
 

@@ -8,7 +8,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 
 const OLLAMA = process.env.OLLAMA_HOST || "http://localhost:11434";
-const DEFAULT_MODEL = process.env.OLLAMA_ADVISOR_MODEL || "gemma4:31b";
+const DEFAULT_MODEL = process.env.OLLAMA_ADVISOR_MODEL || "gemma4:26b";
 const REQUEST_TIMEOUT_MS = 300_000; // cold model load can take ~60s; be generous.
 
 const SYSTEM_PROMPT = `You are a senior technical advisor giving a second opinion to an engineering team that already has its own plan and context.
