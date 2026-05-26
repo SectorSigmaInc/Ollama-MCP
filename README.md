@@ -67,6 +67,9 @@ claude mcp add ollama -s user -- node /absolute/path/to/Ollama-MCP/server.js
 > on Windows, `/home/you/Ollama-MCP/server.js` on macOS/Linux. The server is registered at
 > user scope, so the path must be absolute.
 
+> To bake in a default context window, add `-e OLLAMA_ADVISOR_NUM_CTX=<tokens>` before the `--`.
+> See [Configuration](#configuration-env-vars) for why that value is per-machine.
+
 This writes to `~/.claude.json`. The tool is then exposed as
 **`mcp__ollama__consult`**. Restart Claude Code so it loads the new server, then
 confirm with `claude mcp get ollama` (expect `Scope: User config` and
@@ -134,6 +137,17 @@ returns an `isError` result with a clear message instead of throwing.
 | `OLLAMA_HOST` | `http://localhost:11434` | Base URL of the Ollama server. |
 | `OLLAMA_ADVISOR_MODEL` | `gemma4:26b` | Default model when the `model` arg is omitted. |
 | `OLLAMA_ADVISOR_NUM_CTX` | _(unset)_ | Default context window (tokens) when the `num_ctx` arg is omitted. Unset lets Ollama choose. |
+
+A sensible default context size depends on your GPU's VRAM, so it lives **per machine** in the
+registration rather than in the code. `setup.ps1 -NumCtx <tokens>` bakes it in:
+
+```powershell
+./setup.ps1 -NumCtx 65536   # registers the server with OLLAMA_ADVISOR_NUM_CTX=65536
+```
+
+That is equivalent to `claude mcp add ollama -s user -e OLLAMA_ADVISOR_NUM_CTX=<tokens> -- node <path>`.
+Re-running with `-NumCtx` re-registers (remove + add) to apply the value; omitting it leaves the
+window unset (Ollama's default). Restart Claude Code afterward so the server picks up the change.
 
 ## Notes
 
