@@ -8,7 +8,7 @@ $ErrorActionPreference = 'Stop'
 $root       = $PSScriptRoot
 $server     = Join-Path $root 'server.js'
 $testClient = Join-Path $root 'test-client.mjs'
-$model      = if ($env:OLLAMA_ADVISOR_MODEL) { $env:OLLAMA_ADVISOR_MODEL } else { 'gemma4:31b' }
+$model      = if ($env:OLLAMA_ADVISOR_MODEL) { $env:OLLAMA_ADVISOR_MODEL } else { 'gemma4:26b' }
 $ollamaHost = if ($env:OLLAMA_HOST)          { $env:OLLAMA_HOST }          else { 'http://localhost:11434' }
 
 function Step($n, $msg) { Write-Host "`n=== $n  $msg ===" -ForegroundColor Cyan }
